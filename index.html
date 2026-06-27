@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Focus Timer">
+  <meta name="theme-color" content="#1a1a1a">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>Focus Timer</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #111110;
+      --surface: #1c1c1b;
+      --text: #f0ede8;
+      --text-muted: #666;
+      --border: #2a2a28;
+      --border-strong: #3a3a38;
+      --accent: #f0ede8;
+      --focus-color: #f0ede8;
+      --break-color: #7ab87a;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.8rem;
+      padding: 2.5rem 2rem;
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 24px;
+      width: min(360px, 92vw);
+    }
+
+    h1 {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 6px;
+      background: var(--bg);
+      border-radius: 30px;
+      padding: 4px;
+    }
+
+    .mode-btn {
+      padding: 6px 20px;
+      border-radius: 20px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .mode-btn.active {
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+
+    .ring-wrap {
+      position: relative;
+      width: 220px;
+      height: 220px;
+    }
+
+    .ring-wrap svg {
+      position: absolute;
+      top: 0; left: 0;
+      transform: rotate(-90deg);
+      transition: all 0.3s;
+    }
+
+    #progressRing {
+      transition: stroke-dashoffset 0.8s linear, stroke 0.4s;
+    }
+
+    .ring-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .time-display {
+      font-size: 52px;
+      font-weight: 300;
+      color: var(--text);
+      letter-spacing: -2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mode-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    .controls {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .ctrl-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 0.5px solid var(--border-strong);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: background 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .ctrl-btn:active { background: var(--border); }
+
+    .ctrl-btn.primary {
+      width: 68px;
+      height: 68px;
+      background: var(--accent);
+      color: var(--bg);
+      border-color: var(--accent);
+      font-size: 26px;
+    }
+
+    .ctrl-btn.primary:active { opacity: 0.8; }
+
+    .divider {
+      width: 100%;
+      height: 0.5px;
+      background: var(--border);
+    }
+
+    .settings-row {
+      display: flex;
+      gap: 24px;
+    }
+
+    .setting {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .setting label {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .setting-val {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .setting-val button {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 0.5px solid var(--border-strong);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .setting-val button:active { background: var(--border); }
+
+    .setting-val span {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text);
+      min-width: 28px;
+      text-align: center;
+    }
+
+    .dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-strong);
+      transition: background 0.3s;
+    }
+
+    .dot.done { background: var(--accent); }
+    .dot.current { background: var(--accent); opacity: 0.4; }
+
+    .session-count {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: -0.5rem;
+    }
+
+    .notif-banner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #2a2218;
+      border: 0.5px solid #5a4a28;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #c8a84a;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .notif-banner.show { display: flex; }
+    .notif-banner i { font-size: 16px; }
+
+    .install-banner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: #1a2a1a;
+      border: 0.5px solid #2a4a2a;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #7ab87a;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .install-banner.show { display: flex; }
+    .install-banner i { font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Focus Timer</h1>
+
+    <div id="notifBanner" class="notif-banner">
+      <i class="ti ti-bell"></i>
+      <span>Tap to enable notifications</span>
+    </div>
+
+    <div id="installBanner" class="install-banner">
+      <i class="ti ti-download"></i>
+      <span>Install app on your device</span>
+    </div>
+
+    <div class="mode-tabs">
+      <button class="mode-btn active" id="focusTab">Focus</button>
+      <button class="mode-btn" id="breakTab">Break</button>
+    </div>
+
+    <div class="ring-wrap">
+      <svg width="220" height="220" viewBox="0 0 220 220">
+        <circle cx="110" cy="110" r="100" fill="none" stroke="var(--border)" stroke-width="5"/>
+        <circle id="progressRing" cx="110" cy="110" r="100" fill="none"
+          stroke="var(--focus-color)" stroke-width="5"
+          stroke-linecap="round"
+          stroke-dasharray="628.3"
+          stroke-dashoffset="0"/>
+      </svg>
+      <div class="ring-center">
+        <div class="time-display" id="timeDisplay">25:00</div>
+        <div class="mode-label" id="modeLabel">Focus session</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn" id="resetBtn" aria-label="Reset">
+        <i class="ti ti-refresh"></i>
+      </button>
+      <button class="ctrl-btn primary" id="startBtn" aria-label="Start">
+        <i class="ti ti-player-play"></i>
+      </button>
+      <button class="ctrl-btn" id="skipBtn" aria-label="Skip">
+        <i class="ti ti-player-skip-forward"></i>
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="settings-row">
+      <div class="setting">
+        <label>Focus (min)</label>
+        <div class="setting-val">
+          <button id="focusDec">−</button>
+          <span id="focusVal">25</span>
+          <button id="focusInc">+</button>
+        </div>
+      </div>
+      <div class="setting">
+        <label>Break (min)</label>
+        <div class="setting-val">
+          <button id="breakDec">−</button>
+          <span id="breakVal">5</span>
+          <button id="breakInc">+</button>
+        </div>
+      </div>
+      <div class="setting">
+        <label>Sessions</label>
+        <div class="setting-val">
+          <button id="sessDec">−</button>
+          <span id="sessVal">4</span>
+          <button id="sessInc">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dots" id="dots"></div>
+    <div class="session-count" id="sessionCount">Session 1 of 4</div>
+  </div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────
+    let state = {
+      focusMin: 25, breakMin: 5, totalSessions: 4,
+      currentSession: 1, isBreak: false,
+      timeLeft: 25 * 60, totalTime: 25 * 60,
+      running: false
+    };
+
+    let localInterval = null;
+    let sw = null;
+    let usingSW = false;
+    const CIRC = 628.3;
+
+    // ── Elements ───────────────────────────────────────────
+    const timeDisplay   = document.getElementById('timeDisplay');
+    const modeLabel     = document.getElementById('modeLabel');
+    const progressRing  = document.getElementById('progressRing');
+    const startBtn      = document.getElementById('startBtn');
+    const resetBtn      = document.getElementById('resetBtn');
+    const skipBtn       = document.getElementById('skipBtn');
+    const sessionCount  = document.getElementById('sessionCount');
+    const dotsEl        = document.getElementById('dots');
+    const focusTab      = document.getElementById('focusTab');
+    const breakTab      = document.getElementById('breakTab');
+    const notifBanner   = document.getElementById('notifBanner');
+    const installBanner = document.getElementById('installBanner');
+
+    // ── Service Worker ─────────────────────────────────────
+    async function registerSW() {
+      if (!('serviceWorker' in navigator)) return;
+      try {
+        const reg = await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+        sw = navigator.serviceWorker.controller;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          sw = navigator.serviceWorker.controller;
+        });
+        navigator.serviceWorker.addEventListener('message', e => {
+          if (e.data.type === 'TICK') {
+            state = { ...state, ...e.data.state };
+            renderDisplay();
+          }
+        });
+        usingSW = true;
+      } catch(err) {
+        console.warn('SW registration failed, using local timer', err);
+      }
+    }
+
+    function sendSW(type, payload = {}) {
+      if (sw) sw.postMessage({ type, payload: { ...state, ...payload } });
+    }
+
+    // ── Notifications ──────────────────────────────────────
+    async function requestNotifications() {
+      if (!('Notification' in window)) return false;
+      if (Notification.permission === 'granted') return true;
+      const result = await Notification.requestPermission();
+      return result === 'granted';
+    }
+
+    function checkNotifBanner() {
+      if (!('Notification' in window)) return;
+      if (Notification.permission !== 'granted') {
+        notifBanner.classList.add('show');
+      }
+    }
+
+    notifBanner.addEventListener('click', async () => {
+      const granted = await requestNotifications();
+      if (granted) notifBanner.classList.remove('show');
+    });
+
+    // ── Install banner ─────────────────────────────────────
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', e => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBanner.classList.add('show');
+    });
+
+    installBanner.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') installBanner.classList.remove('show');
+      deferredPrompt = null;
+    });
+
+    window.addEventListener('appinstalled', () => {
+      installBanner.classList.remove('show');
+    });
+
+    // ── Audio beep ─────────────────────────────────────────
+    function playBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [0, 0.18, 0.36].forEach((t, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.frequency.value = i === 2 ? 880 : 660;
+          gain.gain.setValueAtTime(0.3, ctx.currentTime + t);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + t + 0.3);
+          osc.start(ctx.currentTime + t);
+          osc.stop(ctx.currentTime + t + 0.35);
+        });
+      } catch(e) {}
+    }
+
+    // ── Local fallback timer ───────────────────────────────
+    function localTick() {
+      if (state.timeLeft <= 0) {
+        handlePhaseEnd();
+        return;
+      }
+      state.timeLeft--;
+      renderDisplay();
+    }
+
+    function handlePhaseEnd() {
+      playBeep();
+      if (!state.isBreak) {
+        if (state.currentSession >= state.totalSessions) {
+          stopTimer();
+          state.currentSession = 1;
+          state.isBreak = false;
+          state.timeLeft = state.focusMin * 60;
+          state.totalTime = state.focusMin * 60;
+          renderDisplay();
+          return;
+        }
+        // Switch to break but pause — wait for manual start
+        stopTimer();
+        state.isBreak = true;
+        state.timeLeft = state.breakMin * 60;
+        state.totalTime = state.breakMin * 60;
+      } else {
+        // Switch to next focus session but pause — wait for manual start
+        stopTimer();
+        state.currentSession++;
+        state.isBreak = false;
+        state.timeLeft = state.focusMin * 60;
+        state.totalTime = state.focusMin * 60;
+      }
+      renderDisplay();
+    }
+
+    function stopTimer() {
+      state.running = false;
+      if (localInterval) { clearInterval(localInterval); localInterval = null; }
+      if (usingSW) sendSW('PAUSE_TIMER');
+      startBtn.innerHTML = '<i class="ti ti-player-play"></i>';
+    }
+
+    // ── Controls ───────────────────────────────────────────
+    startBtn.addEventListener('click', () => {
+      state.running = !state.running;
+      if (state.running) {
+        if (usingSW) {
+          sendSW('START_TIMER');
+        } else {
+          localInterval = setInterval(localTick, 1000);
+        }
+        startBtn.innerHTML = '<i class="ti ti-player-pause"></i>';
+      } else {
+        stopTimer();
+      }
+    });
+
+    resetBtn.addEventListener('click', () => {
+      stopTimer();
+      state.currentSession = 1;
+      state.isBreak = false;
+      state.timeLeft = state.focusMin * 60;
+      state.totalTime = state.focusMin * 60;
+      if (usingSW) sendSW('RESET_TIMER');
+      renderDisplay();
+    });
+
+    skipBtn.addEventListener('click', () => {
+      const wasRunning = state.running;
+      stopTimer();
+      handlePhaseEnd();
+      if (wasRunning) {
+        state.running = true;
+        if (usingSW) {
+          sendSW('START_TIMER');
+        } else {
+          localInterval = setInterval(localTick, 1000);
+        }
+        startBtn.innerHTML = '<i class="ti ti-player-pause"></i>';
+      }
+    });
+
+    // ── Settings ───────────────────────────────────────────
+    function makeSetter(getVal, setVal, minVal, maxVal, affectsTime) {
+      return {
+        inc: () => {
+          const v = getVal();
+          if (v < maxVal) {
+            setVal(v + 1);
+            if (affectsTime && !state.running) {
+              state.timeLeft = getVal() * 60;
+              state.totalTime = getVal() * 60;
+              renderDisplay();
+            }
+          }
+        },
+        dec: () => {
+          const v = getVal();
+          if (v > minVal) {
+            setVal(v - 1);
+            if (affectsTime && !state.running) {
+              state.timeLeft = getVal() * 60;
+              state.totalTime = getVal() * 60;
+              renderDisplay();
+            }
+          }
+        }
+      };
+    }
+
+    const focusSetter = makeSetter(
+      () => state.focusMin,
+      v => { state.focusMin = v; document.getElementById('focusVal').textContent = v; },
+      5, 90,
+      true // only affects time if in focus mode
+    );
+    focusSetter.inc = () => { if(state.focusMin < 90){ state.focusMin = Math.min(90, state.focusMin + 5); document.getElementById('focusVal').textContent = state.focusMin; if(!state.running && !state.isBreak){ state.timeLeft = state.focusMin*60; state.totalTime = state.focusMin*60; renderDisplay(); } } };
+    focusSetter.dec = () => { if(state.focusMin > 5){ state.focusMin = Math.max(5, state.focusMin - 5); document.getElementById('focusVal').textContent = state.focusMin; if(!state.running && !state.isBreak){ state.timeLeft = state.focusMin*60; state.totalTime = state.focusMin*60; renderDisplay(); } } };
+
+    const breakSetter = makeSetter(
+      () => state.breakMin,
+      v => { state.breakMin = v; document.getElementById('breakVal').textContent = v; },
+      5, 30, false
+    );
+    breakSetter.inc = () => { if(state.breakMin < 30){ state.breakMin = Math.min(30, state.breakMin + 5); document.getElementById('breakVal').textContent = state.breakMin; if(!state.running && state.isBreak){ state.timeLeft = state.breakMin*60; state.totalTime = state.breakMin*60; renderDisplay(); } } };
+    breakSetter.dec = () => { if(state.breakMin > 5){ state.breakMin = Math.max(5, state.breakMin - 5); document.getElementById('breakVal').textContent = state.breakMin; if(!state.running && state.isBreak){ state.timeLeft = state.breakMin*60; state.totalTime = state.breakMin*60; renderDisplay(); } } };
+
+    const sessSetter = makeSetter(
+      () => state.totalSessions,
+      v => {
+        state.totalSessions = v;
+        document.getElementById('sessVal').textContent = v;
+        if (state.currentSession > v) state.currentSession = v;
+        renderDisplay();
+      },
+      1, 8, false
+    );
+
+    document.getElementById('focusInc').addEventListener('click', focusSetter.inc);
+    document.getElementById('focusDec').addEventListener('click', focusSetter.dec);
+    document.getElementById('breakInc').addEventListener('click', breakSetter.inc);
+    document.getElementById('breakDec').addEventListener('click', breakSetter.dec);
+    document.getElementById('sessInc').addEventListener('click', sessSetter.inc);
+    document.getElementById('sessDec').addEventListener('click', sessSetter.dec);
+
+    // ── Render ─────────────────────────────────────────────
+    function buildDots() {
+      dotsEl.innerHTML = '';
+      for (let i = 0; i < state.totalSessions; i++) {
+        const d = document.createElement('div');
+        if (i < state.currentSession - 1) d.className = 'dot done';
+        else if (i === state.currentSession - 1) d.className = 'dot current';
+        else d.className = 'dot';
+        dotsEl.appendChild(d);
+      }
+    }
+
+    function renderDisplay() {
+      const m = Math.floor(state.timeLeft / 60);
+      const s = state.timeLeft % 60;
+      const timeStr = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+      timeDisplay.textContent = timeStr;
+
+      const progress = 1 - state.timeLeft / state.totalTime;
+      progressRing.style.strokeDashoffset = (CIRC * (1 - progress)).toFixed(1);
+      progressRing.style.stroke = state.isBreak ? 'var(--break-color)' : 'var(--focus-color)';
+
+      modeLabel.textContent = state.isBreak ? 'Break time' : 'Focus session';
+      sessionCount.textContent = 'Session ' + state.currentSession + ' of ' + state.totalSessions;
+
+      focusTab.classList.toggle('active', !state.isBreak);
+      breakTab.classList.toggle('active', state.isBreak);
+
+      document.title = timeStr + (state.isBreak ? ' · Break' : ' · Focus');
+
+      buildDots();
+    }
+
+    // ── Init ───────────────────────────────────────────────
+    registerSW();
+    checkNotifBanner();
+    renderDisplay();
+  </script>
+</body>
+</html>
